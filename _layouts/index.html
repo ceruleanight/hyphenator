@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Hyphenator</title>
+	<!-- Bootstrap CSS -->
+	<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="container mt-5">
+	<h1 class="mb-4">Hyphenator</h1>
+	<div class="form-group">
+		<label for="inputText">Input:</label>
+		<textarea class="form-control" id="inputText" rows="6"></textarea>
+	</div>
+	<button id="replaceButton" class="btn btn-primary">Hyphenate</button>
+	<div class="mt-4">
+		<label for="outputText">Output:</label>
+		<textarea class="form-control" id="outputText" rows="6" readonly></textarea>
+	</div>
+	<div class="form-check mt-4">
+		<input type="checkbox" class="form-check-input" id="copyToClipboard" checked>
+		<label class="form-check-label" for="copyToClipboard">Copy to Clipboard</label>
+	</div>
+</div>
+
+<script>
+	function capitalize(s) {
+		return s.charAt(0).toUpperCase() + s.slice(1);
+	}
+
+	document.getElementById('replaceButton').addEventListener('click', async function() {
+		const inputText = document.getElementById('inputText').value.replace(/-/g, '=');
+		const jsonFileURL = './words.json';
+
+		try {
+			const response = await fetch(jsonFileURL);
+
+			if (!response.ok) {
+				throw new Error('Failed to load JSON file');
+			}
+
+			const dict = await response.json();
+
+			let outputText = inputText;
+
+			for (const word in dict) {
+				const regex = new RegExp('\\b' + word + '\\b', 'gi');
+
+				outputText = outputText.replace(regex, match => {
+					return match[0] === match[0].toUpperCase() ? capitalize(dict[word]) : dict[word];
+				});
+			}
+
+			document.getElementById('outputText').value = outputText;
+
+			if (document.getElementById('copyToClipboard').checked) {
+				if (navigator.clipboard) {
+					navigator.clipboard.writeText(outputText);
+				} else {
+					document.getElementById('outputText').select();
+					document.execCommand('copy');
+				}
+			}
+		} catch (error) {
+			console.error('Error:', error);
+			document.getElementById('outputText').value = 'An error occurred. Please check the console for details.';
+		}
+	});
+</script>
+
+</body>
+</html>
