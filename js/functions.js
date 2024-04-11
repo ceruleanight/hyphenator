@@ -1,7 +1,3 @@
-function capitalize(s) {
-	return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
 document.addEventListener("DOMContentLoaded", function(event) {
 	document.getElementById('hyphenate').addEventListener('click', async function() {
 		const inputText = document.getElementById('inputText').value.replace(/-/g, '=');
@@ -15,22 +11,36 @@ document.addEventListener("DOMContentLoaded", function(event) {
 			}
 
 			const dict = await response.json();
-			const lines = inputText.split('\n');
+			const words = inputText.split(/\b/);
 
-			const replacedLines = lines.map(line => {
-				const words = line.split(/\s+/);
+			// loop through every word
+			for (let i = 0; i < words.length; i++) {
+				const word = words[i];
+				const sanitizedWord = word.replace(/[^a-zA-Z]/g, ''); // remove non-letter characters such as punctuation
+				const lowerCaseWord = sanitizedWord.toLowerCase();
+				const syllable = dict[lowerCaseWord]; // lookup in the dict (case insensitive)
 
-				const replacedWords = words.map(word => {
-					if (dict.hasOwnProperty(word.toLowerCase()))
-						return word.charAt(0) === word.charAt(0).toUpperCase() ? capitalize(dict[word.toLowerCase()]) : dict[word.toLowerCase()];
-					else
-						return word;
-				});
+				if (syllable) {
+					const index = word.toLowerCase().indexOf(lowerCaseWord);
 
-				return replacedWords.join(' ');
-			});
+					if (index !== -1) {
+						let replacedWord = syllable;
+						let hyphenOffset = 0;
 
-			const outputText = replacedLines.join('\n');
+						// loop through all the letters of the replaced word and keep track of hyphens so all the letters are capitalized correctly
+						for (let j = 0; j < replacedWord.length; j++) {
+							if (replacedWord[j] === '-')
+								hyphenOffset++;
+							if (word[j - hyphenOffset] === word[j - hyphenOffset].toUpperCase())
+								replacedWord = replacedWord.substring(0, j) + replacedWord[j].toUpperCase() + replacedWord.substring(j + 1);
+						}
+						words[i] = replacedWord;
+					}
+				}
+				
+			}
+
+			const outputText = words.join('');
 
 			document.getElementById('outputText').value = outputText;
 
