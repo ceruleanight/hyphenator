@@ -11,7 +11,8 @@ document.addEventListener("DOMContentLoaded", function(event) {
 			}
 
 			const dict = await response.json();
-			const words = inputText.split(/\b/);
+			const lines = inputText.split('\n').map(line => line.trim()).join('\n');
+			const words = lines.split(/\b/);
 
 			// loop through every word
 			for (let i = 0; i < words.length; i++) {
