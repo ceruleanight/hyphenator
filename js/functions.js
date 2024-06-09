@@ -12,33 +12,43 @@ document.addEventListener("DOMContentLoaded", function(event) {
 
 			const dict = await response.json();
 			const lines = inputText.split('\n').map(line => line.trim()).join('\n');
-			const words = lines.split(/\b/);
+			const words = lines.match(/[^\s]+|\s+/g);
 
 			// loop through every word
 			for (let i = 0; i < words.length; i++) {
 				const word = words[i];
-				const sanitizedWord = word.replace(/[^a-zA-Z]/g, ''); // remove non-letter characters such as punctuation
+
+				if (/^\s+$/.test(word)) // ignore whitespace
+					continue;
+
+				const sanitizedWord = word.replace(/[^a-zA-Z']/g, ''); // remove non-letter characters except '
 				const lowerCaseWord = sanitizedWord.toLowerCase();
 				const syllable = dict[lowerCaseWord]; // lookup in the dict (case insensitive)
 
 				if (syllable) {
-					const index = word.toLowerCase().indexOf(lowerCaseWord);
+					// overcomplicated code to preserve the case of each character in relation to hyphens
 
-					if (index !== -1) {
-						let replacedWord = syllable;
-						let hyphenOffset = 0;
+					let capitalizedSyllable = '';
+					let originalIndex = 0;
 
-						// loop through all the letters of the replaced word and keep track of hyphens so all the letters are capitalized correctly
-						for (let j = 0; j < replacedWord.length; j++) {
-							if (replacedWord[j] === '-')
-								hyphenOffset++;
-							if (word[j - hyphenOffset] === word[j - hyphenOffset].toUpperCase())
-								replacedWord = replacedWord.substring(0, j) + replacedWord[j].toUpperCase() + replacedWord.substring(j + 1);
+					for (let j = 0; j < syllable.length; j++) {
+						if (syllable[j] === '-') {
+							capitalizedSyllable += '-';
+						} else {
+							if (sanitizedWord[originalIndex] && sanitizedWord[originalIndex] === sanitizedWord[originalIndex].toUpperCase()) {
+								capitalizedSyllable += syllable[j].toUpperCase();
+							} else {
+								capitalizedSyllable += syllable[j].toLowerCase();
+							}
+							originalIndex++;
 						}
-						words[i] = replacedWord;
 					}
+			
+					// preserve original characters around the sanitized word
+					const prefix = word.match(/^[^a-zA-Z']*/)[0]; // prefix non-alphabetic characters
+					const suffix = word.match(/[^a-zA-Z']*$/)[0]; // suffix non-alphabetic characters
+					words[i] = prefix + capitalizedSyllable + suffix;
 				}
-				
 			}
 
 			const outputText = words.join('');
