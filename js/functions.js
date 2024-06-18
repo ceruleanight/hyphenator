@@ -21,9 +21,19 @@ document.addEventListener("DOMContentLoaded", function(event) {
 				if (/^\s+$/.test(word)) // ignore whitespace
 					continue;
 
-				const sanitizedWord = word.replace(/[^a-zA-Z']/g, ''); // remove non-letter characters except '
-				const lowerCaseWord = sanitizedWord.toLowerCase();
+				let sanitizedWord = word.replace(/[^a-zA-Z']/g, ''); // remove non-letter characters except '
+				let lowerCaseWord = sanitizedWord.toLowerCase();
+				let isPlural = false;
+			
+				// check for plural words with "'s" at the end
+				if (lowerCaseWord.endsWith("'s")) {
+					lowerCaseWord = lowerCaseWord.slice(0, -2);
+					sanitizedWord = sanitizedWord.slice(0, -2);
+					isPlural = true;
+				}
+			
 				const syllable = dict[lowerCaseWord]; // lookup in the dict (case insensitive)
+
 
 				if (syllable) {
 					// overcomplicated code to preserve the case of each character in relation to hyphens
@@ -43,7 +53,10 @@ document.addEventListener("DOMContentLoaded", function(event) {
 							originalIndex++;
 						}
 					}
-			
+
+					if (isPlural)
+						capitalizedSyllable += "'s";
+
 					// preserve original characters around the sanitized word
 					const prefix = word.match(/^[^a-zA-Z']*/)[0]; // prefix non-alphabetic characters
 					const suffix = word.match(/[^a-zA-Z']*$/)[0]; // suffix non-alphabetic characters
