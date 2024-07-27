@@ -21,50 +21,59 @@ document.addEventListener("DOMContentLoaded", function(event) {
 				if (/^\s+$/.test(word)) // ignore whitespace
 					continue;
 
-				let sanitizedWord = word.replace(/[^a-zA-Z']/g, ''); // remove non-letter characters except '
-				let lowerCaseWord = sanitizedWord.toLowerCase();
+				let sanitizedWord = word.replace(/[^a-zA-Z'=]/g, ''); // remove non-letter characters except ' and =
 				let isPlural = false;
-			
+
 				// check for plural words with "'s" at the end
-				if (lowerCaseWord.endsWith("'s")) {
-					lowerCaseWord = lowerCaseWord.slice(0, -2);
+				if (sanitizedWord.endsWith("'s")) {
 					sanitizedWord = sanitizedWord.slice(0, -2);
 					isPlural = true;
 				}
-			
-				const syllable = dict[lowerCaseWord]; // lookup in the dict (case insensitive)
 
+				// split the word by equal signs to handle each part separately
+				const parts = sanitizedWord.split('=');
 
-				if (syllable) {
-					// overcomplicated code to preserve the case of each character in relation to hyphens
+				let transformedParts = parts.map(part => {
+					let lowerCasePart = part.toLowerCase();
+					let syllable = dict[lowerCasePart];
 
-					let capitalizedSyllable = '';
-					let originalIndex = 0;
+					if (syllable) {
+						// overcomplicated code to preserve the case of each character in relation to equal signs
+						let capitalizedSyllable = '';
+						let originalIndex = 0;
 
-					for (let j = 0; j < syllable.length; j++) {
-						if (syllable[j] === '-') {
-							capitalizedSyllable += '-';
-						} else {
-							if (sanitizedWord[originalIndex] && sanitizedWord[originalIndex] === sanitizedWord[originalIndex].toUpperCase()) {
-								capitalizedSyllable += syllable[j].toUpperCase();
+						for (let j = 0; j < syllable.length; j++) {
+							if (syllable[j] === '-') {
+								capitalizedSyllable += '-';
 							} else {
-								capitalizedSyllable += syllable[j].toLowerCase();
+								if (part[originalIndex] && part[originalIndex] === part[originalIndex].toUpperCase()) {
+									capitalizedSyllable += syllable[j].toUpperCase();
+								} else {
+									capitalizedSyllable += syllable[j].toLowerCase();
+								}
+								originalIndex++;
 							}
-							originalIndex++;
 						}
+
+						return capitalizedSyllable;
+					} else {
+						return part; // if not found in dict, return the part as is
 					}
+				});
 
-					if (isPlural)
-						capitalizedSyllable += "'s";
+				let capitalizedSyllable = transformedParts.join('=');
 
-					// preserve original characters around the sanitized word
-					const prefix = word.match(/^[^a-zA-Z']*/)[0]; // prefix non-alphabetic characters
-					const suffix = word.match(/[^a-zA-Z']*$/)[0]; // suffix non-alphabetic characters
-					words[i] = prefix + capitalizedSyllable + suffix;
-				}
+				if (isPlural)
+					capitalizedSyllable += "'s";
+
+				// preserve original characters around the sanitized word
+				const prefix = word.match(/^[^a-zA-Z'=]*/)[0]; // prefix non-alphabetic characters
+				const suffix = word.match(/[^a-zA-Z'=]*$/)[0]; // suffix non-alphabetic characters
+				words[i] = prefix + capitalizedSyllable + suffix;
 			}
 
 			const outputText = words.join('');
+
 
 			document.getElementById('outputText').value = outputText;
 
